@@ -1,7 +1,6 @@
 package urlshort
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -12,26 +11,16 @@ import (
 // If the path is not provided in the map, then the fallback
 // http.Handler will be called instead.
 func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.HandlerFunc {
-	// u, err := url.Parse("https://godoc.org/github.com/gophercises/urlshort")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	hfn := func(w http.ResponseWriter, r *http.Request) {
 		v := r.URL.Path
-		if v == "/" {
-			http.Error(w, "empty url", http.StatusBadRequest)
-		}
-
-		fmt.Fprintf(w, "Received this query: %v\n", v)
 
 		if match, ok := pathsToUrls[v]; ok {
-			fmt.Fprintf(w, "Found in map: %v\n", match)
-		} else {
-			fmt.Fprintf(w, "short URL not found\n")
+			http.Redirect(w, r, match, http.StatusFound)
+			return
 		}
-
-	})
+		fallback.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(hfn)
 }
 
 // YAMLHandler will parse the provided YAML and then return
